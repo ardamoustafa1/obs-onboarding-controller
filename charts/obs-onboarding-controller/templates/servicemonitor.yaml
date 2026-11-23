@@ -1,0 +1,26 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+# Bootstrap ServiceMonitor for the manager's own /metrics endpoint. Once the
+# self-monitoring ServiceObservability (config/samples/obs_v1_serviceobservability_self.yaml)
+# is applied, the operator manages its own ServiceMonitor through the normal
+# pipeline and this one becomes redundant -- kept only for the chicken-and-egg
+# bootstrap period before that CR exists. See README.md.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}-bootstrap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "obs-onboarding-controller.labels" . | nindent 6 }}
+      control-plane: controller-manager
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.metrics.serviceMonitor.interval }}
+      path: /metrics
+{{- end }}

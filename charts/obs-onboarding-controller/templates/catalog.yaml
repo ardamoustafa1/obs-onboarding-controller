@@ -1,0 +1,65 @@
+{{- if .Values.catalog.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}-catalog
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+    app.kubernetes.io/component: catalog
+spec:
+  replicas: {{ .Values.catalog.replicas }}
+  selector:
+    matchLabels:
+      {{- include "obs-onboarding-controller.labels" . | nindent 6 }}
+      app.kubernetes.io/component: catalog
+  template:
+    metadata:
+      labels:
+        {{- include "obs-onboarding-controller.labels" . | nindent 8 }}
+        app.kubernetes.io/component: catalog
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: catalog
+          image: "{{ .Values.catalog.image.repository }}:{{ .Values.catalog.image.tag }}"
+          imagePullPolicy: {{ .Values.catalog.image.pullPolicy }}
+          env:
+            - name: CATALOG_ADDR
+              value: ":{{ .Values.catalog.service.port }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.catalog.service.port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            {{- toYaml .Values.catalog.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}-catalog
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+    app.kubernetes.io/component: catalog
+spec:
+  selector:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+    app.kubernetes.io/component: catalog
+  ports:
+    - name: http
+      port: {{ .Values.catalog.service.port }}
+      targetPort: http
+{{- end }}

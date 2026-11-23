@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- obs_v1_serviceobservability.yaml
+- obs_v1_observabilityenvironment.yaml
+- obs_v1_serviceobservability_self.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

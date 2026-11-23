@@ -1,0 +1,40 @@
+apiVersion: obs.acme.com/v1
+kind: ServiceObservability
+metadata:
+  name: checkout-api
+  namespace: checkout
+spec:
+  serviceType: http
+  environment: prod
+  slo:
+    availabilityTarget: 0.999
+    latencyTargetMs: 300
+    latencyPercentile: 99
+  goldenSignals:
+    trafficMetric: http_server_requests_total
+    errorMetric: http_server_request_errors_total
+    latencyMetric: http_server_request_duration_seconds
+    saturationMetrics:
+      - cpu_utilization_ratio
+      - memory_utilization_ratio
+  dashboards:
+    template: http-service-v2
+  alerting:
+    burnRateAlerts: true
+    extraRules:
+      - name: CheckoutQueueBacklogHigh
+        expr: checkout_pending_orders_count > 500
+        for: 15m
+        severity: warning
+        summary: Checkout pending-order backlog is elevated
+  ownership:
+    team: team-checkout
+    slackChannel: "#checkout-alerts"
+    pagerDutyService: checkout-production
+  scrapeConfig:
+    selector:
+      matchLabels:
+        app: checkout-api
+    port: http-metrics
+    path: /metrics
+    interval: 30s

@@ -1,0 +1,89 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "obs-onboarding-controller.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.rbac.create }}
+# Generated from config/rbac/role.yaml (controller-gen rbac markers in
+# internal/controller/*.go) -- keep the two in sync; do not hand-edit one
+# without the other.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["podmonitors", "prometheusrules", "servicemonitors"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["obs.acme.com"]
+    resources: ["observabilityenvironments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["obs.acme.com"]
+    resources: ["observabilityenvironments/status", "serviceobservabilities/status"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["obs.acme.com"]
+    resources: ["serviceobservabilities"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["obs.acme.com"]
+    resources: ["serviceobservabilities/finalizers"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "obs-onboarding-controller.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "obs-onboarding-controller.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "obs-onboarding-controller.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "obs-onboarding-controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "obs-onboarding-controller.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "obs-onboarding-controller.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

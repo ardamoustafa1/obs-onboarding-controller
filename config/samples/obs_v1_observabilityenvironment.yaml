@@ -1,0 +1,19 @@
+apiVersion: obs.acme.com/v1
+kind: ObservabilityEnvironment
+metadata:
+  name: prod
+spec:
+  displayName: Production
+  grafana:
+    url: https://grafana.prod.acme.internal
+    folderPrefix: "team-"
+    apiTokenSecretRef:
+      name: grafana-prod-api-token
+      namespace: obs-system
+      key: token
+  prometheus:
+    ruleNamespace: obs-system
+    additionalLabels:
+      release: kube-prometheus-stack
+  catalog:
+    url: http://obs-catalog.obs-system.svc:8080

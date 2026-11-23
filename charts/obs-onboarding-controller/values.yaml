@@ -1,0 +1,55 @@
+manager:
+  image:
+    repository: registry.acme.internal/obs/obs-onboarding-controller
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  leaderElection: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # driftCheckIntervalSeconds mirrors internal/controller's
+  # driftCheckInterval constant; exposed here only as documentation of the
+  # default -- changing it requires rebuilding the image, this chart does
+  # not wire it through a flag/env var.
+  driftCheckIntervalSeconds: 300
+
+catalog:
+  enabled: true
+  image:
+    repository: registry.acme.internal/obs/obs-onboarding-catalog
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  service:
+    port: 8080
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+# metrics.serviceMonitor requires Prometheus Operator's CRDs to already be
+# installed in the cluster (this chart does not install them -- see
+# config/crd/vendor/README.md for why they are only vendored for tests).
+metrics:
+  serviceMonitor:
+    enabled: false
+    additionalLabels: {}
+    interval: 30s
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: ""
+
+# Namespace-scoped watch. Empty means cluster-wide.
+watchNamespace: ""

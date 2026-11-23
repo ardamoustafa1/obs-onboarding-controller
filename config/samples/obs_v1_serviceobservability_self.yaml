@@ -1,0 +1,41 @@
+# Dogfooding (requirement 6): the operator is onboarded into itself. Its own
+# reconcile duration/error-rate/queue-depth golden signals get a dashboard
+# and burn-rate alerts through the exact same pipeline every other service
+# goes through -- see internal/controller/metrics.go and README.md
+# ("Meta-monitoring / dogfooding").
+apiVersion: obs.acme.com/v1
+kind: ServiceObservability
+metadata:
+  name: obs-onboarding-controller
+  namespace: obs-system
+spec:
+  serviceType: worker
+  environment: prod
+  slo:
+    # The operator's own SLO: 99.5% of reconciles should succeed. Looser
+    # than a typical customer-facing http service target because a single
+    # reconcile error is a self-healing retry, not a user-visible failure.
+    availabilityTarget: 0.995
+    latencyTargetMs: 2000
+    latencyPercentile: 95
+  goldenSignals:
+    trafficMetric: obs_onboarding_reconcile_duration_seconds_count
+    errorMetric: obs_onboarding_reconcile_errors_total
+    processingDurationMetric: obs_onboarding_reconcile_duration_seconds
+    saturationMetrics:
+      - workqueue_depth_utilization_ratio
+  dashboards:
+    template: worker-queue-v2
+  alerting:
+    burnRateAlerts: true
+  ownership:
+    team: team-observability
+    slackChannel: "#observability-alerts"
+    pagerDutyService: observability-platform
+  scrapeConfig:
+    selector:
+      matchLabels:
+        control-plane: controller-manager
+    port: metrics
+    path: /metrics
+    interval: 30s

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: obs-onboarding-controller
+description: >-
+  Kubernetes Operator that turns ServiceObservability manifests into Grafana
+  dashboards, Prometheus/Alertmanager rules and service-catalog entries.
+  Deployed by obs-gitops-pipelines.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/acme/obs-onboarding-controller
+maintainers:
+  - name: team-observability
